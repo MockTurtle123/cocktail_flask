@@ -13,7 +13,11 @@
             <div class="form-group mb-4">
                 <label for="name">Search by name:</label>
                 <select class="form-control" name="name" id="name">
+                    {% if session['ingredient_selected'] %}
+                    <option selected="selected" disabled>Available recipes: (containing {{ session['ingredient_selected'] }})</option>
+                    {% else %}
                     <option selected="selected" disabled>Available recipes:</option>
+                    {% endif %}
                     {% for name in name_list %}
                     <option>{{ name }}</option>
                     {% endfor %}
@@ -22,21 +26,30 @@
                 <button class="btn btn-secondary mb-4" type="submit">Select</button>
             </div>
             <div class="form-group mb-4">
-                <label for="name">Search by name:</label>
+                <label for="name">Search by ingredient:</label>
                 <select class="form-control" name="ingredient" id="ingredient">
                     <option selected="selected" disabled>Available ingredients:</option>
-                    {% for name in ingredient_list %}
-                    <option>{{ name }}</option>
+                    {% for ingredient in ingredient_list %}
+                    <option>{{ ingredient }}</option>
                     {% endfor %}
                 </select>
                 <br>
                 <button class="btn btn-secondary mb-4" type="submit">Select</button>
+                {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                <div class="alert alert-success">
+                    {% for message in messages %}
+                        {{ message }}
+                    {% endfor %}
+                </div>
+                    {% endif %}
+                    {% endwith %}
             </div>
             <div class="form-group mb-4">
                 {% if g.name_selected %}
                     <p>Here's the recipe for <b>{{ g.name_selected }}</b>:</p>
                     <ul>
-                        {% for row in g.recipe %}
+                        {% for row in session['recipe'] %}
                             <li>{{ row|safe }}</li>
                             <br>
                         {% endfor %}

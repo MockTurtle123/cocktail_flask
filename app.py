@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, g
+from flask import Flask, render_template, request, g, session, flash
 from flask_sqlalchemy import SQLAlchemy
 
 from functions import *
@@ -39,19 +39,31 @@ def index():
 
     if request.method == "POST":
         try:
-            g.name_selected = request.form['name']
-            # g.ingredient_selected = request.form['ingredient']
-        except:
-            g.name_selected = 'Alexander'
+            #  get selected ingredient from the user
+            session['ingredient_selected'] = request.form['ingredient']
+        except KeyError:
+            try:
+                #  get selected name from the user and return the recipe
+                g.name_selected = request.form['name']
+                session['recipe'] = return_recipe(g.name_selected, db)
+                session.pop('ingredient_selected', default=None)
+            except KeyError:
+                #  post error message
+                flash("Please select a name or an ingredient")
 
-        g.recipe = return_recipe(g.name_selected, db)
-
-    name_list = db.session.scalars(db.select(Cocktail).order_by(Cocktail.name))
-
+    # load ingredients from the database
     query = db.select(db.distinct(Ingredient.ingredient)).filter(Ingredient.ingredient.is_not(None)).order_by(Ingredient.ingredient)
     ingredient_list = db.session.scalars(query).all()
 
-    return render_template("index.html", name_list=name_list, ingredient_list=ingredient_list)
+    name_list = []
+
+    try:  # add recipes (containing selected ingredient) to the name list
+        query = db.select(Cocktail).join(Ingredient).filter(Ingredient.ingredient == session['ingredient_selected'])
+        name_list = db.session.scalars(query)
+    except KeyError:  # add every recipe to the name list
+        name_list = db.session.scalars(db.select(Cocktail).order_by(Cocktail.name))
+
+    return render_template("index.html", ingredient_list=ingredient_list, name_list=name_list)
 
 
 @app.route('/update')
